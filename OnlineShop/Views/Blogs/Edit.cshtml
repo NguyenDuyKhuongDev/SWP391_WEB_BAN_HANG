@@ -1,4 +1,4 @@
-﻿@model OnlineShop.Models.Blog
+﻿@model OnlineShop.ViewModel.BlogVM
 
 @{
     ViewData["Title"] = "Chỉnh sửa bài viết";
@@ -82,12 +82,48 @@
 
                             <div class="form-group mb-3">
                                 <label asp-for="ThumbnailId" class="form-label fw-bold">
-                                    <i class="fas fa-image me-2 text-muted"></i>Ảnh đại diện
+                                    <i class="fas fa-image me-2 text-muted"></i>Ảnh Thumbnail
                                 </label>
                                 <select asp-for="ThumbnailId" class="form-select" asp-items="ViewBag.ThumbnailId">
-                                    <option value="">-- Chọn ảnh đại diện --</option>
+                                    <option value="">-- Chọn ảnh Thumbnail --</option>
                                 </select>
                                 <span asp-validation-for="ThumbnailId" class="text-danger small"></span>
+                            </div>
+                            <!-- chọn tag cho block-->
+                            <div class="form-group mb-3">
+                                <label class="form-label fw-bold">
+                                    <i class="fas fa-tags me-2 text-muted"></i>Tags
+                                </label>
+                                <div class="tag-container d-flex flex-wrap gap-2 p-3 bg-light rounded">
+                                    @{
+                                        var currentBlogTags = ViewData["tagOfBlog"] as SelectList;
+                                        var allTags = ViewData["ListTag"] as SelectList;
+
+                                        foreach (var tag in allTags)
+                                        {
+                                            bool isSelected = currentBlogTags?.Any(t => t.Value == tag.Value) ?? false;
+
+                                            <div class="tag-item position-relative">
+                                                <!-- Checkbox ẩn nhưng vẫn hoạt động -->
+                                                <input class="tag-checkbox position-absolute" type="checkbox"
+                                                       id="tag-@tag.Value" value="@tag.Value" name="SelectedTags"
+                                                @(isSelected ? "checked" : "")>
+
+                                                <!-- Label hiển thị UI và có thể click -->
+                                                <label class="tag-label btn btn-sm rounded-pill d-flex align-items-center
+                                 @(isSelected ? "btn-primary text-white" : "btn-outline-secondary")"
+                                                       for="tag-@tag.Value">
+                                                    <i class="fas fa-tag me-1"></i>
+                                                    <span>@tag.Text</span>
+                                                    @if (isSelected)
+                                                    {
+                                                        <i class="fas fa-check ms-2"></i>
+                                                    }
+                                                </label>
+                                            </div>
+                                        }
+                                    }
+                                </div>
                             </div>
 
                             <div class="form-group mb-3">
@@ -189,38 +225,139 @@
         .input-group-text {
             background-color: #f8f9fa;
         }
+
+        .tag-container {
+            max-height: 200px;
+            overflow-y: auto;
+            background-color: #f8f9fa;
+            border-radius: 0.375rem;
+            padding: 0.75rem;
+        }
+
+
+        .tag-item {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .tag-checkbox {
+            opacity: 0;
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            cursor: pointer;
+        }
+
+            .tag-checkbox:checked + .tag-label i {
+                color: white !important;
+            }
+
+            .tag-checkbox:checked + .tag-label {
+                background-color: #0d6efd;
+                border-color: #0d6efd;
+                color: white;
+            }
+
+        .tag-label {
+            padding: 0.35rem 1rem;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+        }
+
+            .tag-label:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            }
+
+        .btn-outline-secondary {
+            border-color: #dee2e6;
+        }
+
+        .tag-item:hover .btn-outline-secondary {
+            background-color: #f8f9fa;
+        }
     </style>
 }
-
 @section Scripts {
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
-
-        <script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
-        <script>
-            ClassicEditor.create(document.querySelector('#Content'), {
-                toolbar: {
-                    items: [
-                        'heading', '|',
-                        'bold', 'italic', 'underline', 'strikethrough', '|',
-                        'link', 'blockQuote', 'codeBlock', '|',
-                        'numberedList', 'bulletedList', 'todoList', '|',
-                        'insertTable', 'imageUpload', 'mediaEmbed', '|',
-                        'undo', 'redo'
-                    ]
-                },
-                mediaEmbed: {
-                    previewsInData: true
-                },
-                image: {
-                    toolbar: [
-                        'imageTextAlternative', 'imageStyle:full', 'imageStyle:side'
-                    ]
-                },
-                language: 'vi'
-            }).catch(error => {
-                console.error(error);
-            });
-        </script>
     }
+    <script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
+    <script>
+        ClassicEditor.create(document.querySelector('#Content'), {
+            toolbar: {
+                items: [
+                    'heading', '|',
+                    'bold', 'italic', 'underline', 'strikethrough', '|',
+                    'link', 'blockQuote', 'codeBlock', '|',
+                    'numberedList', 'bulletedList', 'todoList', '|',
+                    'insertTable', 'imageUpload', 'mediaEmbed', '|',
+                    'undo', 'redo'
+                ]
+            },
+            mediaEmbed: {
+                previewsInData: true
+            },
+            image: {
+                toolbar: [
+                    'imageTextAlternative', 'imageStyle:full', 'imageStyle:side'
+                ]
+            },
+            language: 'vi'
+        }).catch(error => {
+            console.error(error);
+        });
+    </script>
+    <script>
+        document.getElementById('Title').addEventListener('input', function() {
+        const title = this.value;
+        const slugInput = document.getElementById('Slug');
+
+        // Chỉ tự động tạo slug nếu slug chưa được chỉnh sửa
+        if (!slugInput._modified) {
+        const slug = title.toLowerCase()
+        .replace(/ /g, '-')
+        .replace(/[^\w-]+/g, '');
+        slugInput.value = slug;
+        }
+        });
+    </script>
+    <script>
+        document.querySelector('form').addEventListener('submit', function (e) {
+            const dateInput = document.querySelector('input[type="datetime-local"]');
+            if (dateInput.value) {
+                // Đảm bảo định dạng ngày phù hợp
+                const date = new Date(dateInput.value);
+                dateInput.value = date.toISOString().slice(0, 16);
+            }
+        });
+    </script>
+    <script>
+        document.getElementById('Slug').addEventListener('change', function () {
+            this._modified = true;
+        });
+
+    </script>
+    <script>
+        document.querySelectorAll('.tag-item').forEach(item => {
+            item.addEventListener('click', function (e) {
+                if (e.target.tagName !== 'INPUT') {
+                    const checkbox = this.querySelector('.tag-checkbox');
+                    checkbox.checked = !checkbox.checked;
+
+                    const label = this.querySelector('.tag-label');
+                    if (checkbox.checked) {
+                        label.classList.remove('btn-outline-secondary');
+                        label.classList.add('btn-primary', 'text-white');
+                    } else {
+                        label.classList.remove('btn-primary', 'text-white');
+                        label.classList.add('btn-outline-secondary');
+                    }
+                }
+            });
+        });
+    </script>
 }

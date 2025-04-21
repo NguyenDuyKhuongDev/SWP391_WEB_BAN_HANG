@@ -34,10 +34,7 @@ public partial class ApplicationDbContext : IdentityDbContext<IdentityUser>
 
     public virtual DbSet<BlogCategory> BlogCategories { get; set; }
 
-
     public virtual DbSet<Comment> Comments { get; set; }
-
-    public virtual DbSet<ProductCategory> ProductCategories { get; set; }
 
     public virtual DbSet<Tag> Tags { get; set; }
 
@@ -45,9 +42,6 @@ public partial class ApplicationDbContext : IdentityDbContext<IdentityUser>
 
     public virtual DbSet<Thumbnail> Thumbnails { get; set; }
 
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Server=MSI\\MSSQLSERVER03;Database=SWP391DB;User Id=sa;Password=123456;TrustServerCertificate=True;");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -56,18 +50,20 @@ public partial class ApplicationDbContext : IdentityDbContext<IdentityUser>
         {
             entity.ToTable("AdCategory");
 
+            entity.HasIndex(e => e.AdId, "IX_AdCategory_AdId");
+
+            entity.HasIndex(e => e.CategoryId, "IX_AdCategory_CategoryId");
+
             entity.HasOne(d => d.Ad).WithMany(p => p.AdCategories)
                 .HasForeignKey(d => d.AdId)
                 .HasConstraintName("FK_AdCategory_Advertisement");
-
-            entity.HasOne(d => d.Category).WithMany(p => p.AdCategories)
-                .HasForeignKey(d => d.CategoryId)
-                .HasConstraintName("FK_AdCategory_ProductCategory");
         });
 
         modelBuilder.Entity<AdClickLog>(entity =>
         {
             entity.ToTable("AdCLickLog");
+
+            entity.HasIndex(e => e.AdId, "IX_AdCLickLog_AdId");
 
             entity.Property(e => e.ClickedAt).HasColumnType("date");
             entity.Property(e => e.CreatedAt).HasColumnType("date");
@@ -82,6 +78,12 @@ public partial class ApplicationDbContext : IdentityDbContext<IdentityUser>
         modelBuilder.Entity<AdPlacement>(entity =>
         {
             entity.ToTable("AdPlacement");
+
+            entity.HasIndex(e => e.AdId, "IX_AdPlacement_AdId");
+
+            entity.HasIndex(e => e.BlogId, "IX_AdPlacement_BlogId");
+
+            entity.HasIndex(e => e.PositionId, "IX_AdPlacement_PositionId");
 
             entity.Property(e => e.CreatedAt).HasColumnType("date");
 
@@ -120,6 +122,8 @@ public partial class ApplicationDbContext : IdentityDbContext<IdentityUser>
         {
             entity.ToTable("Advertisement");
 
+            entity.HasIndex(e => e.AdTemplateId, "IX_Advertisement_AdTemplateId");
+
             entity.Property(e => e.CreatedAt).HasColumnType("date");
             entity.Property(e => e.EndDate).HasColumnType("date");
             entity.Property(e => e.ImageUrl)
@@ -139,21 +143,18 @@ public partial class ApplicationDbContext : IdentityDbContext<IdentityUser>
         {
             entity.ToTable("Blog");
 
-            entity.HasIndex(e => e.ThumbnailId, "IX_Blog_ThumbnailId").IsUnique();
+            entity.HasIndex(e => e.CategoryId, "IX_Blog_CategoryId");
 
             entity.Property(e => e.AuthorId).HasMaxLength(450);
             entity.Property(e => e.LastUpdated).HasColumnType("date");
             entity.Property(e => e.PublishedDate).HasColumnType("date");
             entity.Property(e => e.Summary).HasMaxLength(500);
-            entity.Property(e => e.ThumbnailId).HasDefaultValueSql("((0))");
 
             entity.HasOne(d => d.Category).WithMany(p => p.Blogs)
                 .HasForeignKey(d => d.CategoryId)
                 .HasConstraintName("FK_Blog_BlogCategory");
 
-            entity.HasOne(b => b.Thumbnail)
-                 .WithMany(t => t.Blogs)
-                 .HasForeignKey(b => b.ThumbnailId);
+            entity.HasOne(d => d.Thumbnail).WithMany(p => p.Blogs).HasForeignKey(d => d.ThumbnailId);
         });
 
         modelBuilder.Entity<BlogCategory>(entity =>
@@ -163,7 +164,6 @@ public partial class ApplicationDbContext : IdentityDbContext<IdentityUser>
             entity.Property(e => e.Name).HasMaxLength(100);
         });
 
-
         modelBuilder.Entity<Comment>(entity =>
         {
             entity.ToTable("Comment");
@@ -172,13 +172,6 @@ public partial class ApplicationDbContext : IdentityDbContext<IdentityUser>
             entity.Property(e => e.TargetType).HasMaxLength(100);
             entity.Property(e => e.UpdatedAt).HasColumnType("date");
             entity.Property(e => e.UserId).HasMaxLength(450);
-        });
-
-        modelBuilder.Entity<ProductCategory>(entity =>
-        {
-            entity.ToTable("ProductCategory");
-
-            entity.Property(e => e.Name).HasMaxLength(100);
         });
 
         modelBuilder.Entity<Tag>(entity =>
@@ -193,6 +186,10 @@ public partial class ApplicationDbContext : IdentityDbContext<IdentityUser>
         modelBuilder.Entity<TagBlog>(entity =>
         {
             entity.ToTable("TagBlog");
+
+            entity.HasIndex(e => e.BlogId, "IX_TagBlog_BlogId");
+
+            entity.HasIndex(e => e.TagId, "IX_TagBlog_TagId");
 
             entity.Property(e => e.CreatedAt).HasColumnType("date");
 

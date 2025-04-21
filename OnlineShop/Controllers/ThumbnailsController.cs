@@ -56,7 +56,7 @@ namespace OnlineShop.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,ThumnailUrl,ThumbnailName")] Thumbnail thumbnail)
+        public async Task<IActionResult> Create([Bind("ThumnailUrl,ThumbnailName")] Thumbnail thumbnail)
         {
             if (ModelState.IsValid)
             {

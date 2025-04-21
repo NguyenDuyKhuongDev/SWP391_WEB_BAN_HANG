@@ -12,8 +12,8 @@ using OnlineShop.Data;
 namespace OnlineShop.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250418015459_Update_Blog_Thumbnail_Relationship")]
-    partial class Update_Blog_Thumbnail_Relationship
+    [Migration("20250420032850_initdb")]
+    partial class initdb
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -452,7 +452,7 @@ namespace OnlineShop.Migrations
                     b.Property<string>("Content")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<bool?>("IsPublished")
+                    b.Property<bool>("IsPublished")
                         .HasColumnType("bit");
 
                     b.Property<DateTime?>("LastUpdated")

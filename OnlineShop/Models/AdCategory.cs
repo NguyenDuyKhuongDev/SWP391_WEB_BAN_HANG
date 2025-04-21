@@ -12,6 +12,4 @@ public partial class AdCategory
     public int? CategoryId { get; set; }
 
     public virtual Advertisement? Ad { get; set; }
-
-    public virtual ProductCategory? Category { get; set; }
 }

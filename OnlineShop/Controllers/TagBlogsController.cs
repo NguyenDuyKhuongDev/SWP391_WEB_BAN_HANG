@@ -49,8 +49,8 @@ namespace OnlineShop.Controllers
         // GET: TagBlogs/Create
         public IActionResult Create()
         {
-            ViewData["BlogId"] = new SelectList(_context.Blogs, "Id", "Id");
-            ViewData["TagId"] = new SelectList(_context.Tags, "Id", "Id");
+            ViewData["BlogId"] = new SelectList(_context.Blogs, "Id", "Title");
+            ViewData["TagId"] = new SelectList(_context.Tags, "Id", "Name");
             return View();
         }
 

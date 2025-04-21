@@ -25,22 +25,23 @@ public partial class Blog
 
     public DateTime? LastUpdated { get; set; }
 
-    public bool IsPublished { get; set; } = false;
+    public bool IsPublished { get; set; }
 
     public int? CategoryId { get; set; }
 
-    public int? ViewCount { get; set; } = 0;
+    public int? ViewCount { get; set; }
 
-    public int? LikeCount { get; set; } = 0;
+    public int? LikeCount { get; set; }
 
-    public int? CommentCount { get; set; } = 0;
+    public int? CommentCount { get; set; }
 
-    public int? ThumbnailId { get; set; }
+    public int ThumbnailId { get; set; }
 
     public virtual ICollection<AdPlacement> AdPlacements { get; set; } = new List<AdPlacement>();
-    public virtual  Thumbnail Thumbnail { get; set; }
 
     public virtual BlogCategory? Category { get; set; }
 
     public virtual ICollection<TagBlog> TagBlogs { get; set; } = new List<TagBlog>();
+
+    public virtual Thumbnail Thumbnail { get; set; } = null!;
 }

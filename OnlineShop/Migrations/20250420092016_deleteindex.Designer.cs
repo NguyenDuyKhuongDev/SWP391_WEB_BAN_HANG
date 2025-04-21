@@ -12,8 +12,8 @@ using OnlineShop.Data;
 namespace OnlineShop.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250417093118_FixLengthtBlogCategory2")]
-    partial class FixLengthtBlogCategory2
+    [Migration("20250420092016_deleteindex")]
+    partial class deleteindex
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -452,7 +452,7 @@ namespace OnlineShop.Migrations
                     b.Property<string>("Content")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<bool?>("IsPublished")
+                    b.Property<bool>("IsPublished")
                         .HasColumnType("bit");
 
                     b.Property<DateTime?>("LastUpdated")
@@ -478,6 +478,7 @@ namespace OnlineShop.Migrations
                         .HasColumnType("nvarchar(500)");
 
                     b.Property<int?>("ThumbnailId")
+                        .IsRequired()
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
                         .HasDefaultValueSql("((0))");
@@ -493,8 +494,7 @@ namespace OnlineShop.Migrations
                     b.HasIndex("CategoryId");
 
                     b.HasIndex(new[] { "ThumbnailId" }, "IX_Blog_ThumbnailId")
-                        .IsUnique()
-                        .HasFilter("[ThumbnailId] IS NOT NULL");
+                        .IsUnique();
 
                     b.ToTable("Blog", (string)null);
                 });
@@ -509,8 +509,7 @@ namespace OnlineShop.Migrations
 
                     b.Property<string>("Name")
                         .HasMaxLength(100)
-                        .HasColumnType("nchar(100)")
-                        .IsFixedLength();
+                        .HasColumnType("nvarchar(100)");
 
                     b.HasKey("Id");
 
@@ -630,6 +629,12 @@ namespace OnlineShop.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ThumbnailName")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("nvarchar(max)")
+                        .HasDefaultValueSql("(N'')");
 
                     b.Property<string>("ThumnailUrl")
                         .HasMaxLength(500)
@@ -760,9 +765,10 @@ namespace OnlineShop.Migrations
                         .HasConstraintName("FK_Blog_BlogCategory");
 
                     b.HasOne("OnlineShop.Models.Thumbnail", "Thumbnail")
-                        .WithOne("Blog")
-                        .HasForeignKey("OnlineShop.Models.Blog", "ThumbnailId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .WithMany("Blogs")
+                        .HasForeignKey("ThumbnailId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Category");
 
@@ -831,7 +837,7 @@ namespace OnlineShop.Migrations
 
             modelBuilder.Entity("OnlineShop.Models.Thumbnail", b =>
                 {
-                    b.Navigation("Blog");
+                    b.Navigation("Blogs");
                 });
 #pragma warning restore 612, 618
         }
