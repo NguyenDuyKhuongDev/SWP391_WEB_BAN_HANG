@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using OnlineShop.Data;
+using OnlineShop.ExtensionMethods;
 using OnlineShop.Models;
 using OnlineShop.ViewModel;
 
@@ -14,25 +15,47 @@ namespace OnlineShop.Controllers
 {
     public class BlogsController : Controller
     {
+        private const int PAGE_SIZE = 5;
+        private const int MAX_DISPLAY_PAGES_INDEX = 5;
+        private const int MAX_DISPLAY_PAGES_COMMON_PAGE = 7;
         private readonly ApplicationDbContext _context;
-
+        private List<Blog>? sourceBlog;
         public BlogsController(ApplicationDbContext context)
         {
             _context = context;
         }
 
         // GET: Blogs
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int page = 1)
         {
-            var applicationDbContext = _context.Blogs.Include(b => b.Category).Include(b => b.Thumbnail);
-            return View(await applicationDbContext.ToListAsync());
+
+
+            sourceBlog = await _context.Blogs.Include(b => b.Category).Include(b => b.Thumbnail).ToListAsync();
+            var totalPage = (int)Math.Ceiling((double)sourceBlog.Count / PAGE_SIZE);
+            var blogPaging = CommonMethods.Paging(sourceBlog, page, PAGE_SIZE);
+            var blogPagingSorted = blogPaging.OrderByDescending(b => b.PublishedDate).ToList();
+            ViewData["currentPage"] = page;
+            ViewData["totalPage"] = totalPage;
+            ViewData["maxDisplayPages"] = MAX_DISPLAY_PAGES_INDEX;
+            return View(blogPagingSorted);
         }
 
-        public async Task<IActionResult> IndexCommonBlogs()
+        public async Task<IActionResult> IndexCommonBlogs(int page = 1)
         {
+            ViewData["blogCategories"] = await _context.BlogCategories.ToListAsync();
             ViewData["ListTags"] = await _context.Tags.ToListAsync();
-            var blogsContext = _context.Blogs.Include(b => b.Category).Include(b => b.Thumbnail);
-            return View("IndexCommonBlogs", await blogsContext.ToListAsync());
+            var sourceBlog = await _context.Blogs
+                .Include(b => b.Category)
+                .Include(b => b.Thumbnail)
+                .Where(b => b.IsPublished)
+                .ToListAsync();
+            var totalPage = (int)Math.Ceiling((double)sourceBlog.Count / PAGE_SIZE);
+            var blogPaging = CommonMethods.Paging(sourceBlog, page, PAGE_SIZE);
+            var blogPagingSorted = blogPaging.OrderByDescending(b => b.PublishedDate).ToList();
+            ViewData["currentPage"] = page;
+            ViewData["totalPage"] = totalPage;
+            ViewData["maxDisplayPages"] = MAX_DISPLAY_PAGES_COMMON_PAGE;
+            return View("IndexCommonBlogs", blogPagingSorted);
         }
 
         public async Task<IActionResult> BlogPageView(int id)
@@ -40,6 +63,7 @@ namespace OnlineShop.Controllers
 
             ViewData["BlogTags"] = await _context.TagBlogs.Where(t => t.BlogId == id).ToListAsync();
             var blogContext = _context.Blogs.Include(b => b.Category).Include(b => b.Thumbnail).FirstOrDefault(blog => blog.Id == id);
+            string msg = await UpdateViewCount(id);
             return View("BlogPageView", blogContext);
         }
 
@@ -78,8 +102,10 @@ namespace OnlineShop.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(BlogVM blogVM, List<int> SelectedTags)
         {
+
             if (ModelState.IsValid)
             {
+                var publishDate = (blogVM.IsPublished) ? DateTime.Now : (DateTime?)null;
                 var blog = new Blog()
                 {
                     Title = blogVM.Title,
@@ -88,7 +114,7 @@ namespace OnlineShop.Controllers
                     Slug = blogVM.Slug,
                     Summary = blogVM.Summary,
                     Content = blogVM.Content,
-                    PublishedDate = blogVM.PublishedDate,
+                    PublishedDate = publishDate,
                     CategoryId = blogVM.CategoryId,
                     ThumbnailId = blogVM.ThumbnailId,
                 };
@@ -141,7 +167,6 @@ namespace OnlineShop.Controllers
                 Slug = blog.Slug,
                 Summary = blog.Summary,
                 Content = blog.Content,
-                PublishedDate = blog.PublishedDate,
                 AuthorId = blog.AuthorId,
                 IsPublished = blog.IsPublished,
 
@@ -152,8 +177,9 @@ namespace OnlineShop.Controllers
                 .Include(t => t.Tag)
                 .Where(t => t.BlogId == id)
                 .Select(t => t.Tag).ToListAsync();
+
             ViewData["tagOfBlog"] = new SelectList(tagOfBlog, "Id", "Name");
-            ViewData["ListTag"] = new SelectList(_context.Tags,"Id","Name");
+            ViewData["ListTag"] = new SelectList(_context.Tags, "Id", "Name");
             return View(blogVM);
         }
 
@@ -167,6 +193,8 @@ namespace OnlineShop.Controllers
             if (ModelState.IsValid)
             {
                 var blogUpdate = await _context.Blogs.FirstAsync(blog => blog.Id == blogVM.Id);
+
+
                 if (blogUpdate == null)
                 {
                     return RedirectToAction(nameof(Index));
@@ -175,7 +203,7 @@ namespace OnlineShop.Controllers
                 blogUpdate.MetaTitle = blogVM.MetaTitle;
                 blogUpdate.MetaDescription = blogVM.MetaDescription;
                 blogUpdate.IsPublished = blogVM.IsPublished;
-                blogUpdate.PublishedDate = blogVM.PublishedDate;
+                if (blogVM.IsPublished) blogUpdate.PublishedDate = DateTime.Now;
                 blogUpdate.Slug = blogVM.Slug;
                 blogUpdate.Summary = blogVM.Summary;
                 blogUpdate.Content = blogVM.Content;
@@ -186,6 +214,8 @@ namespace OnlineShop.Controllers
                 {
                     _context.Update(blogUpdate);
                     await _context.SaveChangesAsync();
+
+                    await UpdateTags(blogVM.Id, SelectedTags);
                 }
                 catch (DbUpdateConcurrencyException exception)
                 {
@@ -193,7 +223,6 @@ namespace OnlineShop.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-
 
             ViewData["CategoryId"] = new SelectList(_context.BlogCategories, "Id", "Name", blogVM.CategoryId);
             ViewData["ThumbnailId"] = new SelectList(_context.Thumbnails, "Id", "ThumbnailName", blogVM.ThumbnailId);
@@ -231,6 +260,14 @@ namespace OnlineShop.Controllers
                 return Problem("Entity set 'ApplicationDbContext.Blogs'  is null.");
             }
             var blog = await _context.Blogs.FindAsync(id);
+            var tagsOfBlog = await _context.TagBlogs.Where(t => t.BlogId == id).ToListAsync();
+            if (tagsOfBlog != null && tagsOfBlog.Count > 0)
+            {
+                foreach (var tag in tagsOfBlog)
+                {
+                    _context.Remove(tag);
+                }
+            }
             if (blog != null)
             {
                 _context.Blogs.Remove(blog);
@@ -239,10 +276,55 @@ namespace OnlineShop.Controllers
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
+        public async Task<IActionResult> PublishBlog(int id)
+        {
+            if (id == null) return RedirectToAction(nameof(Index));
+            var blog = await _context.Blogs.FirstOrDefaultAsync(b => b.Id == id);
+            if (blog == null) return RedirectToAction(nameof(Index));
+            blog.IsPublished = !blog.IsPublished;
+            blog.PublishedDate= (blog.IsPublished) ? DateTime.Now : (DateTime?)null;
+            _context.Blogs.Update(blog);
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
 
+        }
+
+        public async Task<string> UpdateViewCount(int id) {
+
+            if (id == null) return "Input is null";
+            var blog = await _context.Blogs.FirstOrDefaultAsync(b => b.Id == id);
+            if (blog == null) return "Blog is null"; 
+            blog.ViewCount += 1;
+            _context.Blogs.Update(blog);
+            await _context.SaveChangesAsync();
+return "";
+        }
         private bool BlogExists(int id)
         {
             return (_context.Blogs?.Any(e => e.Id == id)).GetValueOrDefault();
+        }
+        private async Task UpdateTags(int blogId, List<int> SelectedTags)
+        {
+            var existingTagIds = await _context.TagBlogs
+                .Where(t => t.BlogId == blogId)
+                .Select(t => t.TagId)
+                .ToListAsync();
+
+            var existingSet = new HashSet<int>(existingTagIds);
+            var selectedSet = new HashSet<int>(SelectedTags);
+
+            var tagToRemove = existingSet.Except(selectedSet);
+            var tagToAdd = selectedSet.Except(existingSet);
+
+            foreach (var tagId in tagToAdd)
+            {
+                _context.TagBlogs.Add(new TagBlog { BlogId = blogId, TagId = tagId });
+            }
+            var tagNeedRemove = _context.TagBlogs.Where(t => tagToRemove.Contains(t.TagId) && t.BlogId == blogId);
+            if (tagNeedRemove != null) _context.TagBlogs.RemoveRange(tagNeedRemove);
+
+            await _context.SaveChangesAsync();
+
         }
     }
 }

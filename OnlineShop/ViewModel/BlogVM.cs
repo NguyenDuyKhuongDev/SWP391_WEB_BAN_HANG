@@ -16,7 +16,7 @@ namespace OnlineShop.ViewModel
         public string? MetaDescription { get; set; }
         [Required]
         public string? Slug { get; set; }
-        public int? Id { get; set; } // chi dung trong update
+        public int Id { get; set; } // chi dung trong update
 
         public string? Summary { get; set; }
 
@@ -24,10 +24,8 @@ namespace OnlineShop.ViewModel
 
         public string? AuthorId { get; set; }
 
-        public DateTime? PublishedDate { get; set; }
-
         public DateTime? LastUpdated { get; set; }
-
+        public DateTime? PublishedDate { get; set; }
         public bool IsPublished { get; set; } = false;
 
         public int? CategoryId { get; set; }
