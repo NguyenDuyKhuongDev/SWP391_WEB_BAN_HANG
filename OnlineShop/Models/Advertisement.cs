@@ -15,7 +15,7 @@ public partial class Advertisement
 
     public string? LinkUrl { get; set; }
 
-    public bool? IsActive { get; set; }
+    public bool IsActive { get; set; } = false;
 
     public DateTime? StartDate { get; set; }
 

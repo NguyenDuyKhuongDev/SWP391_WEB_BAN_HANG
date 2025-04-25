@@ -236,9 +236,9 @@ namespace OnlineShop.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AdId");
+                    b.HasIndex(new[] { "AdId" }, "IX_AdCategory_AdId");
 
-                    b.HasIndex("CategoryId");
+                    b.HasIndex(new[] { "CategoryId" }, "IX_AdCategory_CategoryId");
 
                     b.ToTable("AdCategory", (string)null);
                 });
@@ -276,7 +276,7 @@ namespace OnlineShop.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AdId");
+                    b.HasIndex(new[] { "AdId" }, "IX_AdCLickLog_AdId");
 
                     b.ToTable("AdCLickLog", (string)null);
                 });
@@ -303,11 +303,11 @@ namespace OnlineShop.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AdId");
+                    b.HasIndex(new[] { "AdId" }, "IX_AdPlacement_AdId");
 
-                    b.HasIndex("BlogId");
+                    b.HasIndex(new[] { "BlogId" }, "IX_AdPlacement_BlogId");
 
-                    b.HasIndex("PositionId");
+                    b.HasIndex(new[] { "PositionId" }, "IX_AdPlacement_PositionId");
 
                     b.ToTable("AdPlacement", (string)null);
                 });
@@ -423,7 +423,7 @@ namespace OnlineShop.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AdTemplateId");
+                    b.HasIndex(new[] { "AdTemplateId" }, "IX_Advertisement_AdTemplateId");
 
                     b.ToTable("Advertisement", (string)null);
                 });
@@ -474,11 +474,8 @@ namespace OnlineShop.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
-                    b.Property<int?>("ThumbnailId")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasDefaultValueSql("((0))");
+                    b.Property<int>("ThumbnailId")
+                        .HasColumnType("int");
 
                     b.Property<string>("Title")
                         .HasColumnType("nvarchar(max)");
@@ -488,10 +485,9 @@ namespace OnlineShop.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CategoryId");
+                    b.HasIndex("ThumbnailId");
 
-                    b.HasIndex(new[] { "ThumbnailId" }, "IX_Blog_ThumbnailId")
-                        .IsUnique();
+                    b.HasIndex(new[] { "CategoryId" }, "IX_Blog_CategoryId");
 
                     b.ToTable("Blog", (string)null);
                 });
@@ -552,23 +548,6 @@ namespace OnlineShop.Migrations
                     b.ToTable("Comment", (string)null);
                 });
 
-            modelBuilder.Entity("OnlineShop.Models.ProductCategory", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("ProductCategory", (string)null);
-                });
-
             modelBuilder.Entity("OnlineShop.Models.Tag", b =>
                 {
                     b.Property<int>("Id")
@@ -612,9 +591,9 @@ namespace OnlineShop.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("BlogId");
+                    b.HasIndex(new[] { "BlogId" }, "IX_TagBlog_BlogId");
 
-                    b.HasIndex("TagId");
+                    b.HasIndex(new[] { "TagId" }, "IX_TagBlog_TagId");
 
                     b.ToTable("TagBlog", (string)null);
                 });
@@ -700,14 +679,7 @@ namespace OnlineShop.Migrations
                         .HasForeignKey("AdId")
                         .HasConstraintName("FK_AdCategory_Advertisement");
 
-                    b.HasOne("OnlineShop.Models.ProductCategory", "Category")
-                        .WithMany("AdCategories")
-                        .HasForeignKey("CategoryId")
-                        .HasConstraintName("FK_AdCategory_ProductCategory");
-
                     b.Navigation("Ad");
-
-                    b.Navigation("Category");
                 });
 
             modelBuilder.Entity("OnlineShop.Models.AdClickLog", b =>
@@ -820,11 +792,6 @@ namespace OnlineShop.Migrations
             modelBuilder.Entity("OnlineShop.Models.BlogCategory", b =>
                 {
                     b.Navigation("Blogs");
-                });
-
-            modelBuilder.Entity("OnlineShop.Models.ProductCategory", b =>
-                {
-                    b.Navigation("AdCategories");
                 });
 
             modelBuilder.Entity("OnlineShop.Models.Tag", b =>

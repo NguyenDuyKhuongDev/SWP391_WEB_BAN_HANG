@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace OnlineShop.Migrations
 {
     /// <inheritdoc />
-    public partial class initdb : Migration
+    public partial class initDB : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -116,19 +116,6 @@ namespace OnlineShop.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Comment", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "ProductCategory",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ProductCategory", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -314,7 +301,7 @@ namespace OnlineShop.Migrations
                     ViewCount = table.Column<int>(type: "int", nullable: true),
                     LikeCount = table.Column<int>(type: "int", nullable: true),
                     CommentCount = table.Column<int>(type: "int", nullable: true),
-                    ThumbnailId = table.Column<int>(type: "int", nullable: false, defaultValueSql: "((0))")
+                    ThumbnailId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -348,11 +335,6 @@ namespace OnlineShop.Migrations
                         name: "FK_AdCategory_Advertisement",
                         column: x => x.AdId,
                         principalTable: "Advertisement",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK_AdCategory_ProductCategory",
-                        column: x => x.CategoryId,
-                        principalTable: "ProductCategory",
                         principalColumn: "Id");
                 });
 
@@ -518,8 +500,7 @@ namespace OnlineShop.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_Blog_ThumbnailId",
                 table: "Blog",
-                column: "ThumbnailId",
-                unique: true);
+                column: "ThumbnailId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_TagBlog_BlogId",
@@ -564,9 +545,6 @@ namespace OnlineShop.Migrations
 
             migrationBuilder.DropTable(
                 name: "TagBlog");
-
-            migrationBuilder.DropTable(
-                name: "ProductCategory");
 
             migrationBuilder.DropTable(
                 name: "AdPosition");

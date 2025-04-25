@@ -10,88 +10,90 @@ using OnlineShop.Models;
 
 namespace OnlineShop.Controllers
 {
-    public class TagsController : Controller
+    public class AdvertisementsController : Controller
     {
         private readonly ApplicationDbContext _context;
 
-        public TagsController(ApplicationDbContext context)
+        public AdvertisementsController(ApplicationDbContext context)
         {
             _context = context;
         }
 
-        // GET: Tags
+        // GET: Advertisements
         public async Task<IActionResult> Index()
         {
-              return _context.Tags != null ? 
-                          View(await _context.Tags.ToListAsync()) :
-                          Problem("Entity set 'ApplicationDbContext.Tags'  is null.");
+            var applicationDbContext = _context.Advertisements.Include(a => a.AdTemplate);
+            return View(await applicationDbContext.ToListAsync());
         }
 
-        // GET: Tags/Details/5
+        // GET: Advertisements/Details/5
         public async Task<IActionResult> Details(int? id)
         {
-            if (id == null || _context.Tags == null)
+            if (id == null || _context.Advertisements == null)
             {
                 return NotFound();
             }
 
-            var tag = await _context.Tags
+            var advertisement = await _context.Advertisements
+                .Include(a => a.AdTemplate)
                 .FirstOrDefaultAsync(m => m.Id == id);
-            if (tag == null)
+            if (advertisement == null)
             {
                 return NotFound();
             }
 
-            return View(tag);
+            return View(advertisement);
         }
 
-        // GET: Tags/Create
+        // GET: Advertisements/Create
         public IActionResult Create()
         {
+            ViewData["AdTemplateId"] = new SelectList(_context.AdTemplates, "Id", "Id");
             return View();
         }
 
-        // POST: Tags/Create
+        // POST: Advertisements/Create
         // To protect from overposting attacks, enable the specific properties you want to bind to.
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Name,Slug")] Tag tag)
+        public async Task<IActionResult> Create([Bind("Id,Title,AdHtmlContent,ImageUrl,LinkUrl,IsActive,StartDate,EndDate,CreatedAt,UpdatedAt,AdTemplateId,IsCustomHtml")] Advertisement advertisement)
         {
             if (ModelState.IsValid)
             {
-                tag.CreateAt=DateTime.Now;
-                _context.Add(tag);
+                _context.Add(advertisement);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            return View(tag);
+            ViewData["AdTemplateId"] = new SelectList(_context.AdTemplates, "Id", "Id", advertisement.AdTemplateId);
+            return View(advertisement);
         }
 
-        // GET: Tags/Edit/5
+        // GET: Advertisements/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
-            if (id == null || _context.Tags == null)
+            if (id == null || _context.Advertisements == null)
             {
                 return NotFound();
             }
 
-            var tag = await _context.Tags.FindAsync(id);
-            if (tag == null)
+            var advertisement = await _context.Advertisements.FindAsync(id);
+            if (advertisement == null)
             {
                 return NotFound();
             }
-            return View(tag);
+            ViewData["AdTemplateId"] = new SelectList(_context.AdTemplates, "Id", "Id", advertisement.AdTemplateId);
+            return View(advertisement);
         }
 
-        // POST: Tags/Edit/5
+        // POST: Advertisements/Edit/5
         // To protect from overposting attacks, enable the specific properties you want to bind to.
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Slug")] Tag tag)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Title,AdHtmlContent,ImageUrl,LinkUrl,IsActive,StartDate,EndDate,CreatedAt,UpdatedAt,AdTemplateId,IsCustomHtml")] Advertisement advertisement)
         {
-            if (id != tag.Id)
+            if (id != advertisement.Id)
             {
                 return NotFound();
             }
@@ -100,12 +102,12 @@ namespace OnlineShop.Controllers
             {
                 try
                 {
-                    _context.Update(tag);
+                    _context.Update(advertisement);
                     await _context.SaveChangesAsync();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!TagExists(tag.Id))
+                    if (!AdvertisementExists(advertisement.Id))
                     {
                         return NotFound();
                     }
@@ -116,49 +118,51 @@ namespace OnlineShop.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            return View(tag);
+            ViewData["AdTemplateId"] = new SelectList(_context.AdTemplates, "Id", "Id", advertisement.AdTemplateId);
+            return View(advertisement);
         }
 
-        // GET: Tags/Delete/5
+        // GET: Advertisements/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
-            if (id == null || _context.Tags == null)
+            if (id == null || _context.Advertisements == null)
             {
                 return NotFound();
             }
 
-            var tag = await _context.Tags
+            var advertisement = await _context.Advertisements
+                .Include(a => a.AdTemplate)
                 .FirstOrDefaultAsync(m => m.Id == id);
-            if (tag == null)
+            if (advertisement == null)
             {
                 return NotFound();
             }
 
-            return View(tag);
+            return View(advertisement);
         }
 
-        // POST: Tags/Delete/5
+        // POST: Advertisements/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            if (_context.Tags == null)
+            if (_context.Advertisements == null)
             {
-                return Problem("Entity set 'ApplicationDbContext.Tags'  is null.");
+                return Problem("Entity set 'ApplicationDbContext.Advertisements'  is null.");
             }
-            var tag = await _context.Tags.FindAsync(id);
-            if (tag != null)
+            var advertisement = await _context.Advertisements.FindAsync(id);
+            if (advertisement != null)
             {
-                _context.Tags.Remove(tag);
+                _context.Advertisements.Remove(advertisement);
             }
             
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
-        private bool TagExists(int id)
+        private bool AdvertisementExists(int id)
         {
-          return (_context.Tags?.Any(e => e.Id == id)).GetValueOrDefault();
+          return (_context.Advertisements?.Any(e => e.Id == id)).GetValueOrDefault();
         }
     }
 }

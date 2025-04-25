@@ -40,29 +40,36 @@ namespace OnlineShop.Controllers
             return View(blogPagingSorted);
         }
 
-        public async Task<IActionResult> IndexCommonBlogs(int page = 1)
+        public async Task<IActionResult> IndexCommonBlogs(int page = 1, string CategoryId = "", string tagId = "")
         {
             ViewData["blogCategories"] = await _context.BlogCategories.ToListAsync();
             ViewData["ListTags"] = await _context.Tags.ToListAsync();
             var sourceBlog = await _context.Blogs
-                .Include(b => b.Category)
-                .Include(b => b.Thumbnail)
-                .Where(b => b.IsPublished)
-                .ToListAsync();
+     .Include(b => b.Category)
+     .Include(b => b.Thumbnail)
+     .Include(b => b.TagBlogs)
+     .Where(b => b.IsPublished)
+     .ToListAsync();
+
+            if (!string.IsNullOrEmpty(CategoryId)) sourceBlog = sourceBlog.Where(b => b.CategoryId == int.Parse(CategoryId)).ToList();
+            if (!string.IsNullOrEmpty(tagId)) sourceBlog = sourceBlog.Where(b => b.TagBlogs.Any(t => t.TagId == int.Parse(tagId))).ToList();
+
             var totalPage = (int)Math.Ceiling((double)sourceBlog.Count / PAGE_SIZE);
             var blogPaging = CommonMethods.Paging(sourceBlog, page, PAGE_SIZE);
             var blogPagingSorted = blogPaging.OrderByDescending(b => b.PublishedDate).ToList();
             ViewData["currentPage"] = page;
             ViewData["totalPage"] = totalPage;
             ViewData["maxDisplayPages"] = MAX_DISPLAY_PAGES_COMMON_PAGE;
+            ViewData["PopularBlog"] = sourceBlog.OrderByDescending(b => b.ViewCount).FirstOrDefault();
             return View("IndexCommonBlogs", blogPagingSorted);
         }
 
         public async Task<IActionResult> BlogPageView(int id)
         {
 
-            ViewData["BlogTags"] = await _context.TagBlogs.Where(t => t.BlogId == id).ToListAsync();
+            ViewData["BlogTags"] = await _context.TagBlogs.Include(t => t.Tag).Where(t => t.BlogId == id).Select(t => t.Tag.Name).ToListAsync();
             var blogContext = _context.Blogs.Include(b => b.Category).Include(b => b.Thumbnail).FirstOrDefault(blog => blog.Id == id);
+            ViewData["BlogAds"] = await _context.Advertisements.Include(ad=>ad.AdPlacements).Where(ad=>ad.AdPlacements.Any(ap=>ap.BlogId==id)&&ad.IsActive).ToListAsync()??new List<Advertisement>();
             string msg = await UpdateViewCount(id);
             return View("BlogPageView", blogContext);
         }
@@ -282,22 +289,33 @@ namespace OnlineShop.Controllers
             var blog = await _context.Blogs.FirstOrDefaultAsync(b => b.Id == id);
             if (blog == null) return RedirectToAction(nameof(Index));
             blog.IsPublished = !blog.IsPublished;
-            blog.PublishedDate= (blog.IsPublished) ? DateTime.Now : (DateTime?)null;
+            blog.PublishedDate = (blog.IsPublished) ? DateTime.Now : (DateTime?)null;
             _context.Blogs.Update(blog);
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
 
         }
 
-        public async Task<string> UpdateViewCount(int id) {
+        /*    public async Task<string> UpdateLikeCount(int id) {
+                if (id == null) return "Input is null";
+                var blog = await _context.Blogs.FirstOrDefaultAsync(b => b.Id == id);
+                if (blog == null) return "Blog is null";
+                blog.LikeCount += 1;
+                _context.Blogs.Update(blog);
+                await _context.SaveChangesAsync();
+                return "";
+            }*/
 
-            if (id == null) return "Input is null";
+        public async Task<string> UpdateViewCount(int id)
+        {
+
             var blog = await _context.Blogs.FirstOrDefaultAsync(b => b.Id == id);
-            if (blog == null) return "Blog is null"; 
-            blog.ViewCount += 1;
+            if (blog == null) return "Blog is null";
+            blog.ViewCount = (blog.ViewCount ?? 0) + 1;
+
             _context.Blogs.Update(blog);
             await _context.SaveChangesAsync();
-return "";
+            return "";
         }
         private bool BlogExists(int id)
         {

@@ -1,9 +1,12 @@
 ﻿@model OnlineShop.Models.Blog
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
 
 @{
     ViewData["Title"] = Model.Title;
     ViewData["MetaDescription"] = Model.MetaDescription;
     ViewData["MetaKeywords"] = Model.MetaTitle;
+    var tags = ViewBag.BlogTags as List<string>;
+    var BlogAds = ViewBag.BlogAds as List<OnlineShop.Models.Advertisement>;
 }
 
 <!-- Blog Header Section -->
@@ -12,7 +15,7 @@
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb bg-transparent mb-0">
                 <li class="breadcrumb-item"><a href="/">Trang chủ</a></li>
-                <li class="breadcrumb-item"><a href="/blog">Blog</a></li>
+                <li class="breadcrumb-item"><a href="/IndexCommonBlogs">Blog</a></li>
                 <li class="breadcrumb-item"><a href="/blog/category/@Model.Slug">@Model.Category?.Name</a></li>
                 <li class="breadcrumb-item active" aria-current="page">@Model.Title</li>
             </ol>
@@ -101,29 +104,36 @@
             <div class="mb-5">
                 <h5 class="fw-bold mb-3">Tags:</h5>
                 <div class="d-flex flex-wrap gap-2">
-                    @foreach (var tag in Model.TagBlogs?.Select(t => t.Tag) ?? new List<Tag>())
+                @if(tags!=null &&tags.Count >0) {
+                    foreach (var tag in ViewBag.BlogTags)
                     {
-                        <a href="#" class="btn btn-sm btn-outline-secondary rounded-pill px-3">#@tag.Name</a>
+                        <a href="#" class="btn btn-sm btn-outline-secondary rounded-pill px-3">#@tag</a>
                     }
+                 }
                 </div>
             </div>
 
             <!-- Social Sharing -->
             <div class="d-flex align-items-center gap-3 mb-5">
                 <span class="fw-bold me-2">Chia sẻ:</span>
-                <a href="#" class="btn btn-sm btn-outline-primary rounded-circle" title="Facebook">
+                <a href="#" class="btn btn-sm btn-outline-primary rounded-circle" title="Facebook"
+                   data-url="@Url.Action("Details", "Blogs", new { id = Model.Id }, Context.Request.Scheme)">
                     <i class="fab fa-facebook-f"></i>
                 </a>
-                <a href="#" class="btn btn-sm btn-outline-primary rounded-circle" title="Twitter">
+                <a href="#" class="btn btn-sm btn-outline-primary rounded-circle" title="Twitter"
+                   data-url="@Url.Action("Details", "Blogs", new { id = Model.Id }, Context.Request.Scheme)">
                     <i class="fab fa-twitter"></i>
                 </a>
-                <a href="#" class="btn btn-sm btn-outline-primary rounded-circle" title="LinkedIn">
+                <a href="#" class="btn btn-sm btn-outline-primary rounded-circle" title="LinkedIn"
+                   data-url="@Url.Action("Details", "Blogs", new { id = Model.Id }, Context.Request.Scheme)">
                     <i class="fab fa-linkedin-in"></i>
                 </a>
-                <a href="#" class="btn btn-sm btn-outline-primary rounded-circle" title="Copy link">
+                <a href="#" class="btn btn-sm btn-outline-primary rounded-circle" title="Copy link"
+                   data-url="@Url.Action("Details", "Blogs", new { id = Model.Id }, Context.Request.Scheme)">
                     <i class="fas fa-link"></i>
                 </a>
             </div>
+
 
             <!-- Author Bio -->
             <div class="card border-0 bg-light p-4 mb-5 rounded-4">
@@ -402,12 +412,11 @@
                 });
             }
 
-            // Social sharing functionality
             document.querySelectorAll('.btn-outline-primary.rounded-circle').forEach(btn => {
                 btn.addEventListener('click', function (e) {
                     e.preventDefault();
                     const title = encodeURIComponent('@Model.Title');
-                    const url = encodeURIComponent(window.location.href);
+                    const url = encodeURIComponent(this.getAttribute('data-url') ?? window.location.href);
 
                     if (this.querySelector('.fa-facebook-f')) {
                         window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank');
@@ -416,11 +425,12 @@
                     } else if (this.querySelector('.fa-linkedin-in')) {
                         window.open(`https://www.linkedin.com/shareArticle?mini=true&url=${url}&title=${title}`, '_blank');
                     } else if (this.querySelector('.fa-link')) {
-                        navigator.clipboard.writeText(window.location.href);
+                        navigator.clipboard.writeText(decodeURIComponent(url));
                         alert('Đã sao chép liên kết vào clipboard!');
                     }
                 });
             });
+
 
             // Smooth scroll for anchor links in content
             document.querySelectorAll('.blog-content a[href^="#"]').forEach(anchor => {
